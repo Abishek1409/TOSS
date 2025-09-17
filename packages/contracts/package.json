@@ -1,27 +1,27 @@
 {
-    "name":  "contracts",
-    "version":  "1.0.0",
-    "main":  "index.js",
-    "scripts":  {
-                    "test":  "hardhat test"
-                },
-    "keywords":  [
-
-                 ],
-    "author":  "",
-    "license":  "ISC",
-    "type":  "commonjs",
-    "description":  "",
-    "devDependencies":  {
-                            "@nomicfoundation/hardhat-toolbox":  "^6.1.0",
-                            "@types/chai":  "^5.2.2",
-                            "@types/mocha":  "^10.0.10",
-                            "@types/node":  "^24.5.0",
-                            "chai":  "^6.0.1",
-                            "ethers":  "^6.15.0",
-                            "hardhat":  "^3.0.6",
-                            "mocha":  "^11.7.2",
-                            "ts-node":  "^10.9.2",
-                            "typescript":  "^5.9.2"
-                        }
+  "name": "contracts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "clean": "hardhat clean"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "description": "",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@types/chai": "^5.2.2",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^24.5.0",
+    "chai": "^6.0.1",
+    "ethers": "^6.15.0",
+    "hardhat": "^3.0.6",
+    "mocha": "^11.7.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
 }
