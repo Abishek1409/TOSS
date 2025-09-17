@@ -1,9 +1,11 @@
-﻿export default function Page() {
+﻿import AdminCampaigns from './AdminCampaigns'
+export default function Page() {
   return (
     <main style={{ padding: 20 }}>
       <h1>Admin Dashboard</h1>
       <p>Manage campaigns, disbursements, and child records.</p>
-      <AdminCampaigns />\n    </main>
+      <AdminCampaigns />    </main>
   )
 }
+
 
