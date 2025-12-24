@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOSS - Transparent Orphanage Support System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="env.js" onerror="window.TOSS_ENV = null;"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .dashboard-card { transition: all 0.2s ease-in-out; }
+        .dashboard-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05); }
+        .btn-primary { background-color: #4f46e5; color: white; }
+        .btn-primary:hover { background-color: #4338ca; }
+        .btn-secondary { background-color: #e5e7eb; color: #374151; }
+        .btn-secondary:hover { background-color: #d1d5db; }
+        .funding-card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1.5rem; background-color: white; transition: all 0.2s ease-in-out; }
+        .funding-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border-color: #a5b4fc; }
+        .progress-bar { background-color: #e5e7eb; border-radius: 9999px; height: 0.75rem; overflow: hidden; }
+        .progress { background-color: #4ade80; height: 100%; }
+        .verified-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 500; background-color: #dcfce7; color: #166534; border-radius: 9999px; }
+        .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #4f46e5; width: 30px; height: 30px; animation: spin 2s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .input { appearance: none; background-color: #fff; border-color: #6b7280; border-width: 1px; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 1rem; line-height: 1.5rem; --tw-shadow: 0 0 #0000; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">TOSS</h1>
+                <p class="text-sm text-gray-500">Transparent Orphanage Support System</p>
+            </div>
+            <div id="user-session" class="hidden items-center">
+                 <span id="wallet-address" class="font-mono text-sm bg-gray-100 p-2 rounded-md mr-4"></span>
+                 <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md text-sm">Disconnect</button>
+            </div>
+            <button id="connect-wallet-btn" class="btn-primary font-bold py-2 px-4 rounded-md">Connect Wallet</button>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <section id="no-wallet-view">
+            <div class="text-center bg-white p-8 rounded-lg shadow-md">
+                <h2 class="text-2xl font-semibold mb-4">Welcome to TOSS</h2>
+                <p class="text-gray-600">Please connect your MetaMask wallet to interact with the platform.</p>
+            </div>
+        </section>
+
+        <section id="app-view" class="hidden">
+            <section id="donor-dashboard" class="hidden">
+                <h2 class="text-3xl font-semibold mb-6">Live Funding Requests</h2>
+                <div id="funding-requests-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+            
+            <section id="admin-dashboard" class="hidden">
+                 <h2 class="text-3xl font-semibold mb-6">Admin Dashboard</h2>
+                 <div class="grid lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card">
+                        <h3 class="text-xl font-semibold mb-4">Manage Child Profiles</h3>
+                        <form id="add-child-form" class="mb-6">
+                            <input type="text" id="child-name" placeholder="Child's Name" class="mt-1 block w-full input mb-2" required>
+                            <input type="number" id="child-age" placeholder="Age" class="mt-1 block w-full input mb-2" required>
+                            <textarea id="child-story" rows="3" placeholder="Child's Story / Need" class="mt-1 block w-full input" required></textarea>
+                            <button type="submit" class="mt-4 w-full btn-primary font-bold py-2 px-4 rounded-md">Add Child Profile</button>
+                        </form>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card">
+                        <h3 class="text-xl font-semibold mb-4">Create Funding Request</h3>
+                         <form id="create-funding-request-form">
+                            <select id="request-child-id" class="mt-1 block w-full input mb-2" required></select>
+                            <select id="request-doctor-report-id" class="mt-1 block w-full input mb-2" required></select>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Create Public Request</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+             <section id="doctor-dashboard" class="hidden">
+                 <h2 class="text-3xl font-semibold mb-6">Doctor Dashboard</h2>
+                <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card">
+                    <h3 class="text-xl font-semibold mb-4">Create Pre-Treatment Report</h3>
+                    <form id="create-report-form">
+                        <select id="report-child-id" class="mt-1 block w-full input mb-2" required></select>
+                        <textarea id="report-diagnosis" rows="2" placeholder="Diagnosis" class="mt-1 block w-full input mb-2" required></textarea>
+                        <input type="number" step="0.01" id="report-cost" placeholder="Estimated Cost (ETH)" class="mt-1 block w-full input mb-2" required>
+                        <input type="file" id="report-file" class="mt-1 block w-full text-sm" required>
+                        <p class="text-xs text-center my-2 italic">This will upload the report file to IPFS and sign the transaction with your wallet.</p>
+                        <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Upload & Sign Report</button>
+                    </form>
+                </div>
+            </section>
+        </section>
+    </main>
+    
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div id="modal-loader" class="mx-auto loader hidden mb-4"></div>
+            <div class="mt-3 text-center">
+                <h3 id="modal-title" class="text-lg leading-6 font-medium text-gray-900"></h3>
+                <div id="modal-message-content" class="mt-2 px-7 py-3"></div>
+                <div class="items-center px-4 py-3"><button id="modal-close" class="btn-primary w-full py-2">Close</button></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="api-key-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">IPFS Configuration Required</h3>
+                <p class="text-sm text-gray-500 mt-2">Could not find <code>env.js</code>. Please enter your Pinata keys to upload reports.</p>
+                <div class="mt-4 text-left">
+                    <label class="block text-sm font-medium text-gray-700">Pinata API Key</label>
+                    <input type="text" id="manual-api-key" class="mt-1 block w-full input">
+                    <label class="block text-sm font-medium text-gray-700 mt-2">Pinata Secret Key</label>
+                    <input type="password" id="manual-secret-key" class="mt-1 block w-full input">
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="save-keys-btn" class="btn-primary w-full py-2 rounded-md">Save & Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="donation-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <form id="donation-modal-form">
+                 <h3 id="donation-modal-title" class="text-lg leading-6 font-medium text-gray-900 text-center"></h3>
+                 <input type="number" step="0.01" id="donation-amount" placeholder="Amount in ETH" class="mt-4 block w-full input" required>
+                 <input type="hidden" id="donation-request-id">
+                 <button type="submit" class="mt-4 w-full btn-primary font-bold py-2 px-4 rounded-md">Confirm Donation</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        
+      
+        let pinataApiKey = window.TOSS_ENV ? window.TOSS_ENV.PINATA_API_KEY : localStorage.getItem('TOSS_API_KEY');
+        let pinataSecretApiKey = window.TOSS_ENV ? window.TOSS_ENV.PINATA_SECRET_API_KEY : localStorage.getItem('TOSS_SECRET_KEY');
+
+        const config = {
+            contractAddress: "0x9d57d4e594661b6da4ACDffcA9B64D7eca6903f9",
+           
+            pinataApiKey: pinataApiKey,
+            pinataSecretApiKey: pinataSecretApiKey,
+            contractAbi: JSON.parse(`[{"inputs":[{"internalType":"address","name":"_registryAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"name","type":"string"}],"name":"ChildProfileCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"reportId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"ipfsCID","type":"string"}],"name":"DoctorReportCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"DonationMade","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountNeeded","type":"uint256"}],"name":"FundingRequestCreated","type":"event"},{"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"uint256","name":"_age","type":"uint256"},{"internalType":"string","name":"_story","type":"string"}],"name":"createChildProfile","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"string","name":"_diagnosis","type":"string"},{"internalType":"uint256","name":"_estimatedCost","type":"uint256"},{"internalType":"string","name":"_ipfsCID","type":"string"}],"name":"createDoctorReport","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"uint256","name":"_reportId","type":"uint256"}],"name":"createFundingRequest","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_requestId","type":"uint256"}],"name":"donate","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"childProfiles","outputs":[{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"uint256","name":"age","type":"uint256"},{"internalType":"string","name":"story","type":"string"},{"internalType":"bool","name":"isVerified","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"doctorReports","outputs":[{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"diagnosis","type":"string"},{"internalType":"uint256","name":"estimatedCost","type":"uint256"},{"internalType":"string","name":"ipfsCID","type":"string"},{"internalType":"address","name":"doctorAddress","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"fundingRequests","outputs":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getAllFundingRequests","outputs":[{"components":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"},{"internalType":"address[]","name":"donors","type":"address[]"}],"internalType":"struct TOSSCore.FundingRequest[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextChildId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextReportId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextRequestId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"registry","outputs":[{"internalType":"contract IVerifiedRegistry","name":"","type":"address"}],"stateMutability":"view","type":"function"}]`),
+            registryAbi: JSON.parse(`[{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorRemoved","type":"event"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"addDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"removeDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedAdmins","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedDoctors","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]`)
+        };
+
+        
+        let appState = { provider: null, signer: null, userAddress: null, tossContract: null, registryContract: null };
+        const connectWalletBtn = document.getElementById('connect-wallet-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const userSession = document.getElementById('user-session');
+        const walletAddressSpan = document.getElementById('wallet-address');
+        const noWalletView = document.getElementById('no-wallet-view');
+        const appView = document.getElementById('app-view');
+        const donorDashboard = document.getElementById('donor-dashboard');
+        const adminDashboard = document.getElementById('admin-dashboard');
+        const doctorDashboard = document.getElementById('doctor-dashboard');
+        const modal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessageContent = document.getElementById('modal-message-content');
+        const modalClose = document.getElementById('modal-close');
+        const modalLoader = document.getElementById('modal-loader');
+        
+     
+        const apiKeyModal = document.getElementById('api-key-modal');
+        const saveKeysBtn = document.getElementById('save-keys-btn');
+
+        if (!config.pinataApiKey || !config.pinataSecretApiKey) {
+         
+            console.warn("Keys missing from env.js. Prompting user.");
+        }
+
+        function checkKeys() {
+            if (!config.pinataApiKey || !config.pinataSecretApiKey) {
+                apiKeyModal.classList.remove('hidden');
+                return false;
+            }
+            return true;
+        }
+
+        saveKeysBtn.addEventListener('click', () => {
+            const key = document.getElementById('manual-api-key').value;
+            const secret = document.getElementById('manual-secret-key').value;
+            if(key && secret) {
+                config.pinataApiKey = key;
+                config.pinataSecretApiKey = secret;
+                localStorage.setItem('TOSS_API_KEY', key);
+                localStorage.setItem('TOSS_SECRET_KEY', secret);
+                apiKeyModal.classList.add('hidden');
+            } else {
+                alert("Please enter both keys.");
+            }
+        });
+
+        // --- STANDARD APP LOGIC BELOW ---
+        
+        function handleTransactionError(error) {
+            let message = error.message;
+            if (error.data && error.data.message) {
+                message = error.data.message;
+            } else if (error.reason) {
+                message = error.reason;
+            }
+            if (message.includes("execution reverted:")) {
+                message = message.split("execution reverted:")[1].trim();
+            }
+             if (message.includes("Internal JSON-RPC error.")) {
+                message = "The transaction was rejected. This may be due to a contract requirement not being met (e.g., incorrect role) or insufficient funds.";
+            }
+            showModal("Transaction Failed", message);
+        }
+
+        function showModal(title, message, isLoading = false) {
+            modalTitle.textContent = title;
+            modalMessageContent.innerHTML = `<p class="text-sm text-gray-500">${message.replace(/\n/g, '<br>')}</p>`;
+            modalLoader.style.display = isLoading ? 'block' : 'none';
+            modalClose.style.display = isLoading ? 'none' : 'block';
+            modal.classList.remove('hidden');
+        }
+        modalClose.addEventListener('click', () => modal.classList.add('hidden'));
+
+        function updateUI(isConnected, address = '') {
+            if (isConnected) {
+                noWalletView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                connectWalletBtn.classList.add('hidden');
+                userSession.classList.remove('hidden');
+                userSession.classList.add('flex');
+                walletAddressSpan.textContent = `${address.substring(0, 6)}...${address.substring(38)}`;
+            } else {
+                noWalletView.classList.remove('hidden');
+                appView.classList.add('hidden');
+                connectWalletBtn.classList.remove('hidden');
+                userSession.classList.add('hidden');
+                userSession.classList.remove('flex');
+            }
+        }
+        
+        async function connectWallet() {
+            if (typeof window.ethereum === 'undefined') return showModal("Error", "MetaMask is not installed.");
+            try {
+                const provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);
+                const signer = provider.getSigner();
+                const userAddress = await signer.getAddress();
+                
+                appState.provider = provider;
+                appState.signer = signer;
+                appState.userAddress = userAddress;
+
+                appState.tossContract = new ethers.Contract(config.contractAddress, config.contractAbi, signer);
+                const registryAddress = await appState.tossContract.registry();
+                appState.registryContract = new ethers.Contract(registryAddress, config.registryAbi, provider);
+
+                updateUI(true, userAddress);
+                determineRoleAndRenderDashboard();
+            } catch (error) {
+                handleTransactionError(error);
+                updateUI(false);
+            }
+        }
+
+        async function determineRoleAndRenderDashboard() {
+            const isAdmin = await appState.registryContract.verifiedAdmins(appState.userAddress);
+            if (isAdmin) {
+                showDashboard('admin');
+                return;
+            }
+            const isDoctor = await appState.registryContract.verifiedDoctors(appState.userAddress);
+            if (isDoctor) {
+                showDashboard('doctor');
+                // Doctors need keys to upload reports. Check for keys now.
+                checkKeys();
+                return;
+            }
+            showDashboard('donor');
+        }
+
+        function showDashboard(role) {
+            donorDashboard.classList.add('hidden');
+            adminDashboard.classList.add('hidden');
+            doctorDashboard.classList.add('hidden');
+
+            if (role === 'admin') {
+                adminDashboard.classList.remove('hidden');
+            } else if (role === 'doctor') {
+                doctorDashboard.classList.remove('hidden');
+            } else {
+                donorDashboard.classList.remove('hidden');
+            }
+            updateDashboardData(role);
+        }
+        
+        async function updateDashboardData(role) {
+            if (!appState.tossContract) return;
+            try {
+                if (role === 'admin' || role === 'doctor') {
+                    const nextChildId = await appState.tossContract.nextChildId();
+                    let childrenOptions = '<option value="">-- Select Child --</option>';
+                    for (let i = 101; i < nextChildId; i++) {
+                        const child = await appState.tossContract.childProfiles(i);
+                        childrenOptions += `<option value="${child.childId.toNumber()}">${child.name} (ID: ${child.childId.toNumber()})</option>`;
+                    }
+                    document.getElementById('report-child-id').innerHTML = childrenOptions;
+                    document.getElementById('request-child-id').innerHTML = childrenOptions;
+                }
+
+                if (role === 'admin') {
+                    const nextReportId = await appState.tossContract.nextReportId();
+                    let reportOptions = '<option value="">-- Select Doctor Report --</option>';
+                    for (let i = 1; i < nextReportId; i++) {
+                        const report = await appState.tossContract.doctorReports(i);
+                        reportOptions += `<option value="${report.reportId.toNumber()}">Report #${report.reportId.toNumber()} for Child ID ${report.childId.toNumber()}</option>`;
+                    }
+                    document.getElementById('request-doctor-report-id').innerHTML = reportOptions;
+                }
+
+                if (role === 'donor') {
+                    const container = document.getElementById('funding-requests-container');
+                    container.innerHTML = '<div class="loader"></div>';
+                    const requests = await appState.tossContract.getAllFundingRequests();
+                    const activeRequests = requests.filter(r => r.status === 'FUNDING');
+                    container.innerHTML = '';
+                    if (activeRequests.length === 0) {
+                        container.innerHTML = `<p class="text-gray-500 col-span-full">No active funding requests.</p>`;
+                        return;
+                    }
+                    for (const req of activeRequests) {
+                        const child = await appState.tossContract.childProfiles(req.childId);
+                        const amountNeeded = ethers.utils.formatEther(req.amountNeeded);
+                        const amountRaised = ethers.utils.formatEther(req.amountRaised);
+                        const progress = Math.min((parseFloat(amountRaised) / parseFloat(amountNeeded)) * 100, 100);
+                        container.insertAdjacentHTML('beforeend', `
+                           <div class="funding-card">
+                               <h4 class="font-bold text-lg">${child.name}, Age ${child.age.toNumber()}</h4>
+                               <p class="text-sm text-gray-600 my-2">${child.story}</p>
+                               <div class="my-3">
+                                   <div class="progress-bar"><div class="progress" style="width: ${progress}%"></div></div>
+                                   <p class="text-xs mt-1"><b>${amountRaised} ETH</b> raised of ${amountNeeded} ETH</p>
+                               </div>
+                               <div class="flex items-center space-x-2 mt-4">
+                                   <button data-requestid="${req.requestId.toNumber()}" class="view-proof-btn w-full btn-secondary font-bold py-2 px-4 rounded-md text-sm">View Proof</button>
+                                   <button data-requestid="${req.requestId.toNumber()}" data-childname="${child.name}" class="donate-btn w-full btn-primary font-bold py-2 px-4 rounded-md">Donate</button>
+                               </div>
+                           </div>`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating dashboard data:", error);
+                showModal("Data Error", "Could not fetch the latest data from the blockchain.");
+            }
+        }
+
+        function disconnect() {
+            updateUI(false);
+        }
+
+        async function uploadToIPFS(file) {
+            // Final check for keys before upload attempt
+            if (!checkKeys()) throw new Error("API Keys missing.");
+
+            const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
+            let data = new FormData();
+            data.append('file', file);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'pinata_api_key': config.pinataApiKey, 'pinata_secret_api_key': config.pinataSecretApiKey },
+                body: data
+            });
+            const result = await response.json();
+            if (response.status !== 200) throw new Error(`IPFS Upload Failed: ${result.error?.details || 'Unknown error'}`);
+            return result.IpfsHash;
+        }
+
+        connectWalletBtn.addEventListener('click', connectWallet);
+        logoutBtn.addEventListener('click', disconnect);
+
+        document.getElementById('add-child-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('child-name').value;
+            const age = document.getElementById('child-age').value;
+            const story = document.getElementById('child-story').value;
+            showModal("Processing...", "Submitting transaction to the blockchain.", true);
+            try {
+                const tx = await appState.tossContract.createChildProfile(name, parseInt(age), story);
+                await tx.wait();
+                showModal("Success!", `Child profile for ${name} created.\nTx: ${tx.hash}`);
+                updateDashboardData('admin');
+            } catch (error) {
+                handleTransactionError(error);
+            }
+        });
+
+        document.getElementById('create-report-form').addEventListener('submit', async (e) => {
+             e.preventDefault();
+             if (!checkKeys()) return; // Ensure keys exist
+
+             const childId = document.getElementById('report-child-id').value;
+             const diagnosis = document.getElementById('report-diagnosis').value;
+             const cost = document.getElementById('report-cost').value;
+             const file = document.getElementById('report-file').files[0];
+             if (!file) return showModal("Error", "Please select a file.");
+             
+             showModal("Processing...", "Step 1/2: Uploading file to IPFS...", true);
+             try {
+                 const ipfsCID = await uploadToIPFS(file);
+                 showModal("Processing...", `Step 2/2: Submitting transaction with IPFS CID: ${ipfsCID}`, true);
+                 const costInWei = ethers.utils.parseEther(cost);
+                 const tx = await appState.tossContract.createDoctorReport(parseInt(childId), diagnosis, costInWei, ipfsCID);
+                 await tx.wait();
+                 showModal("Success!", `Doctor report created.\nTx: ${tx.hash}`);
+                 updateDashboardData('doctor');
+             } catch (error) {
+                 handleTransactionError(error);
+             }
+        });
+        
+        document.getElementById('create-funding-request-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const childId = document.getElementById('request-child-id').value;
+            const reportId = document.getElementById('request-doctor-report-id').value;
+            showModal("Processing...", "Submitting transaction to the blockchain.", true);
+             try {
+                const tx = await appState.tossContract.createFundingRequest(parseInt(childId), parseInt(reportId));
+                await tx.wait();
+                showModal("Success!", `Funding request created.\nTx: ${tx.hash}`);
+                updateDashboardData('admin');
+            } catch (error) {
+                handleTransactionError(error);
+            }
+        });
+
+        document.getElementById('donor-dashboard').addEventListener('click', async (e) => {
+            if (e.target.classList.contains('donate-btn')) {
+                const requestId = e.target.dataset.requestid;
+                const childName = e.target.dataset.childname;
+                const donationModal = document.getElementById('donation-modal');
+                document.getElementById('donation-modal-title').textContent = `Donate to ${childName}`;
+                document.getElementById('donation-request-id').value = requestId;
+                donationModal.classList.remove('hidden');
+            }
+
+            if (e.target.classList.contains('view-proof-btn')) {
+                const requestId = e.target.dataset.requestid;
+                showModal("Fetching Proof...", "Retrieving report details from the blockchain.", true);
+                try {
+                    const request = await appState.tossContract.fundingRequests(requestId);
+                    const report = await appState.tossContract.doctorReports(request.reportId);
+                    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${report.ipfsCID}`;
+                    
+                    showModal("Success!", `Report found. Opening in a new tab...`);
+                    window.open(ipfsUrl, '_blank');
+                } catch (error) {
+                    handleTransactionError(error);
+                }
+            }
+        });
+
+        document.getElementById('donation-modal-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const requestId = document.getElementById('donation-request-id').value;
+            const amount = document.getElementById('donation-amount').value;
+            const donationModal = document.getElementById('donation-modal');
+            donationModal.classList.add('hidden');
+            showModal("Processing...", "Submitting your donation to the blockchain.", true);
+            try {
+                const amountInWei = ethers.utils.parseEther(amount);
+                const tx = await appState.tossContract.donate(requestId, { value: amountInWei });
+                await tx.wait();
+                showModal("Thank You!", `Your donation was successful!\nTx: ${tx.hash}`);
+                updateDashboardData('donor');
+            } catch (error) {
+                handleTransactionError(error);
+            }
+        });
+    });
+    </script>
+</body>
+</html>
