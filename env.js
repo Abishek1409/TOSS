@@ -1,4 +1,0 @@
-window.TOSS_ENV = {
-    PINATA_API_KEY: "ce1d13c1d4e32cd227e9", 
-    PINATA_SECRET_API_KEY: "3af3ec846c3be0e1e7f48e7f4d89deb702e8196fa1fd4b657c0c525a454ba25e"
-};
