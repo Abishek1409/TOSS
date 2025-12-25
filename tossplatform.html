@@ -9,6 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Load Secrets from ignored file -->
     <script src="env.js" onerror="window.TOSS_ENV = null;"></script>
 
     <style>
@@ -23,10 +24,10 @@
         .funding-card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06); border-color: #a5b4fc; }
         .progress-bar { background-color: #e5e7eb; border-radius: 9999px; height: 0.75rem; overflow: hidden; }
         .progress { background-color: #4ade80; height: 100%; }
-        .verified-badge { display: inline-flex; align-items: center; padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 500; background-color: #dcfce7; color: #166534; border-radius: 9999px; }
         .loader { border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #4f46e5; width: 30px; height: 30px; animation: spin 2s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .input { appearance: none; background-color: #fff; border-color: #6b7280; border-width: 1px; border-radius: 0.375rem; padding: 0.5rem 0.75rem; font-size: 1rem; line-height: 1.5rem; --tw-shadow: 0 0 #0000; }
+        .role-badge { background-color: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: bold; margin-left: 10px;}
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -54,6 +55,32 @@
         </section>
 
         <section id="app-view" class="hidden">
+            
+            <!-- OWNER DASHBOARD (New!) -->
+            <section id="owner-dashboard" class="hidden mb-10 border-b-2 border-gray-200 pb-10">
+                <h2 class="text-3xl font-semibold mb-6 flex items-center">Owner Dashboard <span class="role-badge">SUPER ADMIN</span></h2>
+                <div class="grid lg:grid-cols-2 gap-8">
+                    <!-- Add Admin -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-purple-500">
+                        <h3 class="text-xl font-semibold mb-4">Add New Admin</h3>
+                        <p class="text-sm text-gray-500 mb-4">Authorize an NGO staff member to create child profiles.</p>
+                        <form id="add-admin-form">
+                            <input type="text" id="new-admin-address" placeholder="Admin Wallet Address (0x...)" class="mt-1 block w-full input mb-2" required>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant Admin Role</button>
+                        </form>
+                    </div>
+                    <!-- Add Doctor -->
+                    <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-green-500">
+                        <h3 class="text-xl font-semibold mb-4">Add New Doctor</h3>
+                        <p class="text-sm text-gray-500 mb-4">Authorize a medical professional to upload reports.</p>
+                        <form id="add-doctor-form">
+                            <input type="text" id="new-doctor-address" placeholder="Doctor Wallet Address (0x...)" class="mt-1 block w-full input mb-2" required>
+                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant Doctor Role</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
             <section id="donor-dashboard" class="hidden">
                 <h2 class="text-3xl font-semibold mb-6">Live Funding Requests</h2>
                 <div id="funding-requests-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -99,6 +126,7 @@
         </section>
     </main>
     
+    <!-- Modals -->
     <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 h-full w-full hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div id="modal-loader" class="mx-auto loader hidden mb-4"></div>
@@ -114,7 +142,7 @@
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">IPFS Configuration Required</h3>
-                <p class="text-sm text-gray-500 mt-2">Could not find <code>env.js</code>. Please enter your Pinata keys to upload reports.</p>
+                <p class="text-sm text-gray-500 mt-2">Could not find <code>env.js</code>. Please enter your Pinata keys.</p>
                 <div class="mt-4 text-left">
                     <label class="block text-sm font-medium text-gray-700">Pinata API Key</label>
                     <input type="text" id="manual-api-key" class="mt-1 block w-full input">
@@ -142,20 +170,17 @@
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         
-      
         let pinataApiKey = window.TOSS_ENV ? window.TOSS_ENV.PINATA_API_KEY : localStorage.getItem('TOSS_API_KEY');
         let pinataSecretApiKey = window.TOSS_ENV ? window.TOSS_ENV.PINATA_SECRET_API_KEY : localStorage.getItem('TOSS_SECRET_KEY');
 
         const config = {
-            contractAddress: "0x9d57d4e594661b6da4ACDffcA9B64D7eca6903f9",
-           
+            contractAddress: "0x9d57d4e594661b6da4ACDffcA9B64D7eca6903f9", // Replace if you redeploy!
             pinataApiKey: pinataApiKey,
             pinataSecretApiKey: pinataSecretApiKey,
             contractAbi: JSON.parse(`[{"inputs":[{"internalType":"address","name":"_registryAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"name","type":"string"}],"name":"ChildProfileCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"reportId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"ipfsCID","type":"string"}],"name":"DoctorReportCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"DonationMade","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountNeeded","type":"uint256"}],"name":"FundingRequestCreated","type":"event"},{"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"uint256","name":"_age","type":"uint256"},{"internalType":"string","name":"_story","type":"string"}],"name":"createChildProfile","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"string","name":"_diagnosis","type":"string"},{"internalType":"uint256","name":"_estimatedCost","type":"uint256"},{"internalType":"string","name":"_ipfsCID","type":"string"}],"name":"createDoctorReport","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"uint256","name":"_reportId","type":"uint256"}],"name":"createFundingRequest","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_requestId","type":"uint256"}],"name":"donate","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"childProfiles","outputs":[{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"uint256","name":"age","type":"uint256"},{"internalType":"string","name":"story","type":"string"},{"internalType":"bool","name":"isVerified","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"doctorReports","outputs":[{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"diagnosis","type":"string"},{"internalType":"uint256","name":"estimatedCost","type":"uint256"},{"internalType":"string","name":"ipfsCID","type":"string"},{"internalType":"address","name":"doctorAddress","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"fundingRequests","outputs":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getAllFundingRequests","outputs":[{"components":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"},{"internalType":"address[]","name":"donors","type":"address[]"}],"internalType":"struct TOSSCore.FundingRequest[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextChildId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextReportId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextRequestId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"registry","outputs":[{"internalType":"contract IVerifiedRegistry","name":"","type":"address"}],"stateMutability":"view","type":"function"}]`),
             registryAbi: JSON.parse(`[{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorRemoved","type":"event"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"addDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"removeDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedAdmins","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedDoctors","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]`)
         };
 
-        
         let appState = { provider: null, signer: null, userAddress: null, tossContract: null, registryContract: null };
         const connectWalletBtn = document.getElementById('connect-wallet-btn');
         const logoutBtn = document.getElementById('logout-btn');
@@ -163,23 +188,19 @@
         const walletAddressSpan = document.getElementById('wallet-address');
         const noWalletView = document.getElementById('no-wallet-view');
         const appView = document.getElementById('app-view');
+        
+        const ownerDashboard = document.getElementById('owner-dashboard');
         const donorDashboard = document.getElementById('donor-dashboard');
         const adminDashboard = document.getElementById('admin-dashboard');
         const doctorDashboard = document.getElementById('doctor-dashboard');
+        
         const modal = document.getElementById('message-modal');
         const modalTitle = document.getElementById('modal-title');
         const modalMessageContent = document.getElementById('modal-message-content');
         const modalClose = document.getElementById('modal-close');
         const modalLoader = document.getElementById('modal-loader');
-        
-     
         const apiKeyModal = document.getElementById('api-key-modal');
         const saveKeysBtn = document.getElementById('save-keys-btn');
-
-        if (!config.pinataApiKey || !config.pinataSecretApiKey) {
-         
-            console.warn("Keys missing from env.js. Prompting user.");
-        }
 
         function checkKeys() {
             if (!config.pinataApiKey || !config.pinataSecretApiKey) {
@@ -203,8 +224,6 @@
             }
         });
 
-        // --- STANDARD APP LOGIC BELOW ---
-        
         function handleTransactionError(error) {
             let message = error.message;
             if (error.data && error.data.message) {
@@ -214,9 +233,6 @@
             }
             if (message.includes("execution reverted:")) {
                 message = message.split("execution reverted:")[1].trim();
-            }
-             if (message.includes("Internal JSON-RPC error.")) {
-                message = "The transaction was rejected. This may be due to a contract requirement not being met (e.g., incorrect role) or insufficient funds.";
             }
             showModal("Transaction Failed", message);
         }
@@ -261,7 +277,7 @@
 
                 appState.tossContract = new ethers.Contract(config.contractAddress, config.contractAbi, signer);
                 const registryAddress = await appState.tossContract.registry();
-                appState.registryContract = new ethers.Contract(registryAddress, config.registryAbi, provider);
+                appState.registryContract = new ethers.Contract(registryAddress, config.registryAbi, signer);
 
                 updateUI(true, userAddress);
                 determineRoleAndRenderDashboard();
@@ -272,93 +288,100 @@
         }
 
         async function determineRoleAndRenderDashboard() {
-            const isAdmin = await appState.registryContract.verifiedAdmins(appState.userAddress);
-            if (isAdmin) {
-                showDashboard('admin');
-                return;
-            }
-            const isDoctor = await appState.registryContract.verifiedDoctors(appState.userAddress);
-            if (isDoctor) {
-                showDashboard('doctor');
-                // Doctors need keys to upload reports. Check for keys now.
-                checkKeys();
-                return;
-            }
-            showDashboard('donor');
-        }
-
-        function showDashboard(role) {
+            // Hide all first
+            ownerDashboard.classList.add('hidden');
             donorDashboard.classList.add('hidden');
             adminDashboard.classList.add('hidden');
             doctorDashboard.classList.add('hidden');
 
-            if (role === 'admin') {
-                adminDashboard.classList.remove('hidden');
-            } else if (role === 'doctor') {
-                doctorDashboard.classList.remove('hidden');
-            } else {
-                donorDashboard.classList.remove('hidden');
+            const ownerAddress = await appState.registryContract.owner();
+            
+            // Check Owner
+            if (ownerAddress.toLowerCase() === appState.userAddress.toLowerCase()) {
+                ownerDashboard.classList.remove('hidden');
+                updateDashboardData();
+                return; // Owner sees ONLY Owner Dashboard (Add Admin/Doctor)
             }
-            updateDashboardData(role);
+            
+            // Check Admin
+            const isAdmin = await appState.registryContract.verifiedAdmins(appState.userAddress);
+            if (isAdmin) {
+                adminDashboard.classList.remove('hidden');
+                updateDashboardData();
+                return; // Admin sees ONLY Admin Dashboard
+            }
+
+            // Check Doctor
+            const isDoctor = await appState.registryContract.verifiedDoctors(appState.userAddress);
+            if (isDoctor) {
+                doctorDashboard.classList.remove('hidden');
+                checkKeys();
+                updateDashboardData();
+                return; // Doctor sees ONLY Doctor Dashboard
+            }
+
+            // Default: Donor
+            donorDashboard.classList.remove('hidden');
+            updateDashboardData();
         }
         
-        async function updateDashboardData(role) {
+        async function updateDashboardData() {
             if (!appState.tossContract) return;
+            // Load dropdowns for Admin/Doctor
             try {
-                if (role === 'admin' || role === 'doctor') {
-                    const nextChildId = await appState.tossContract.nextChildId();
-                    let childrenOptions = '<option value="">-- Select Child --</option>';
-                    for (let i = 101; i < nextChildId; i++) {
-                        const child = await appState.tossContract.childProfiles(i);
-                        childrenOptions += `<option value="${child.childId.toNumber()}">${child.name} (ID: ${child.childId.toNumber()})</option>`;
-                    }
-                    document.getElementById('report-child-id').innerHTML = childrenOptions;
-                    document.getElementById('request-child-id').innerHTML = childrenOptions;
+                const nextChildId = await appState.tossContract.nextChildId();
+                let childrenOptions = '<option value="">-- Select Child --</option>';
+                for (let i = 101; i < nextChildId; i++) {
+                    const child = await appState.tossContract.childProfiles(i);
+                    childrenOptions += `<option value="${child.childId.toNumber()}">${child.name} (ID: ${child.childId.toNumber()})</option>`;
                 }
+                const reportChildSelect = document.getElementById('report-child-id');
+                const requestChildSelect = document.getElementById('request-child-id');
+                if(reportChildSelect) reportChildSelect.innerHTML = childrenOptions;
+                if(requestChildSelect) requestChildSelect.innerHTML = childrenOptions;
 
-                if (role === 'admin') {
-                    const nextReportId = await appState.tossContract.nextReportId();
-                    let reportOptions = '<option value="">-- Select Doctor Report --</option>';
-                    for (let i = 1; i < nextReportId; i++) {
-                        const report = await appState.tossContract.doctorReports(i);
-                        reportOptions += `<option value="${report.reportId.toNumber()}">Report #${report.reportId.toNumber()} for Child ID ${report.childId.toNumber()}</option>`;
-                    }
-                    document.getElementById('request-doctor-report-id').innerHTML = reportOptions;
+                const nextReportId = await appState.tossContract.nextReportId();
+                let reportOptions = '<option value="">-- Select Doctor Report --</option>';
+                for (let i = 1; i < nextReportId; i++) {
+                    const report = await appState.tossContract.doctorReports(i);
+                    reportOptions += `<option value="${report.reportId.toNumber()}">Report #${report.reportId.toNumber()} for Child ID ${report.childId.toNumber()}</option>`;
                 }
+                const requestReportSelect = document.getElementById('request-doctor-report-id');
+                if(requestReportSelect) requestReportSelect.innerHTML = reportOptions;
 
-                if (role === 'donor') {
-                    const container = document.getElementById('funding-requests-container');
+                // Load Donor Requests
+                const container = document.getElementById('funding-requests-container');
+                if(container) {
                     container.innerHTML = '<div class="loader"></div>';
                     const requests = await appState.tossContract.getAllFundingRequests();
                     const activeRequests = requests.filter(r => r.status === 'FUNDING');
                     container.innerHTML = '';
                     if (activeRequests.length === 0) {
                         container.innerHTML = `<p class="text-gray-500 col-span-full">No active funding requests.</p>`;
-                        return;
-                    }
-                    for (const req of activeRequests) {
-                        const child = await appState.tossContract.childProfiles(req.childId);
-                        const amountNeeded = ethers.utils.formatEther(req.amountNeeded);
-                        const amountRaised = ethers.utils.formatEther(req.amountRaised);
-                        const progress = Math.min((parseFloat(amountRaised) / parseFloat(amountNeeded)) * 100, 100);
-                        container.insertAdjacentHTML('beforeend', `
-                           <div class="funding-card">
-                               <h4 class="font-bold text-lg">${child.name}, Age ${child.age.toNumber()}</h4>
-                               <p class="text-sm text-gray-600 my-2">${child.story}</p>
-                               <div class="my-3">
-                                   <div class="progress-bar"><div class="progress" style="width: ${progress}%"></div></div>
-                                   <p class="text-xs mt-1"><b>${amountRaised} ETH</b> raised of ${amountNeeded} ETH</p>
-                               </div>
-                               <div class="flex items-center space-x-2 mt-4">
-                                   <button data-requestid="${req.requestId.toNumber()}" class="view-proof-btn w-full btn-secondary font-bold py-2 px-4 rounded-md text-sm">View Proof</button>
-                                   <button data-requestid="${req.requestId.toNumber()}" data-childname="${child.name}" class="donate-btn w-full btn-primary font-bold py-2 px-4 rounded-md">Donate</button>
-                               </div>
-                           </div>`);
+                    } else {
+                        for (const req of activeRequests) {
+                            const child = await appState.tossContract.childProfiles(req.childId);
+                            const amountNeeded = ethers.utils.formatEther(req.amountNeeded);
+                            const amountRaised = ethers.utils.formatEther(req.amountRaised);
+                            const progress = Math.min((parseFloat(amountRaised) / parseFloat(amountNeeded)) * 100, 100);
+                            container.insertAdjacentHTML('beforeend', `
+                            <div class="funding-card">
+                                <h4 class="font-bold text-lg">${child.name}, Age ${child.age.toNumber()}</h4>
+                                <p class="text-sm text-gray-600 my-2">${child.story}</p>
+                                <div class="my-3">
+                                    <div class="progress-bar"><div class="progress" style="width: ${progress}%"></div></div>
+                                    <p class="text-xs mt-1"><b>${amountRaised} ETH</b> raised of ${amountNeeded} ETH</p>
+                                </div>
+                                <div class="flex items-center space-x-2 mt-4">
+                                    <button data-requestid="${req.requestId.toNumber()}" class="view-proof-btn w-full btn-secondary font-bold py-2 px-4 rounded-md text-sm">View Proof</button>
+                                    <button data-requestid="${req.requestId.toNumber()}" data-childname="${child.name}" class="donate-btn w-full btn-primary font-bold py-2 px-4 rounded-md">Donate</button>
+                                </div>
+                            </div>`);
+                        }
                     }
                 }
             } catch (error) {
                 console.error("Error updating dashboard data:", error);
-                showModal("Data Error", "Could not fetch the latest data from the blockchain.");
             }
         }
 
@@ -367,9 +390,7 @@
         }
 
         async function uploadToIPFS(file) {
-            // Final check for keys before upload attempt
             if (!checkKeys()) throw new Error("API Keys missing.");
-
             const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
             let data = new FormData();
             data.append('file', file);
@@ -386,6 +407,36 @@
         connectWalletBtn.addEventListener('click', connectWallet);
         logoutBtn.addEventListener('click', disconnect);
 
+        // --- OWNER FORMS ---
+        document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const address = document.getElementById('new-admin-address').value;
+            showModal("Processing...", "Adding new Admin...", true);
+            try {
+                const tx = await appState.registryContract.addAdmin(address);
+                await tx.wait();
+                showModal("Success!", `Address ${address} is now an Admin.`);
+                document.getElementById('new-admin-address').value = '';
+            } catch (error) {
+                handleTransactionError(error);
+            }
+        });
+
+        document.getElementById('add-doctor-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const address = document.getElementById('new-doctor-address').value;
+            showModal("Processing...", "Adding new Doctor...", true);
+            try {
+                const tx = await appState.registryContract.addDoctor(address);
+                await tx.wait();
+                showModal("Success!", `Address ${address} is now a Doctor.`);
+                document.getElementById('new-doctor-address').value = '';
+            } catch (error) {
+                handleTransactionError(error);
+            }
+        });
+        // -------------------
+
         document.getElementById('add-child-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('child-name').value;
@@ -396,7 +447,7 @@
                 const tx = await appState.tossContract.createChildProfile(name, parseInt(age), story);
                 await tx.wait();
                 showModal("Success!", `Child profile for ${name} created.\nTx: ${tx.hash}`);
-                updateDashboardData('admin');
+                updateDashboardData();
             } catch (error) {
                 handleTransactionError(error);
             }
@@ -404,8 +455,7 @@
 
         document.getElementById('create-report-form').addEventListener('submit', async (e) => {
              e.preventDefault();
-             if (!checkKeys()) return; // Ensure keys exist
-
+             if (!checkKeys()) return;
              const childId = document.getElementById('report-child-id').value;
              const diagnosis = document.getElementById('report-diagnosis').value;
              const cost = document.getElementById('report-cost').value;
@@ -415,12 +465,12 @@
              showModal("Processing...", "Step 1/2: Uploading file to IPFS...", true);
              try {
                  const ipfsCID = await uploadToIPFS(file);
-                 showModal("Processing...", `Step 2/2: Submitting transaction with IPFS CID: ${ipfsCID}`, true);
+                 showModal("Processing...", `Step 2/2: Submitting transaction...`, true);
                  const costInWei = ethers.utils.parseEther(cost);
                  const tx = await appState.tossContract.createDoctorReport(parseInt(childId), diagnosis, costInWei, ipfsCID);
                  await tx.wait();
                  showModal("Success!", `Doctor report created.\nTx: ${tx.hash}`);
-                 updateDashboardData('doctor');
+                 updateDashboardData();
              } catch (error) {
                  handleTransactionError(error);
              }
@@ -435,7 +485,7 @@
                 const tx = await appState.tossContract.createFundingRequest(parseInt(childId), parseInt(reportId));
                 await tx.wait();
                 showModal("Success!", `Funding request created.\nTx: ${tx.hash}`);
-                updateDashboardData('admin');
+                updateDashboardData();
             } catch (error) {
                 handleTransactionError(error);
             }
@@ -450,15 +500,13 @@
                 document.getElementById('donation-request-id').value = requestId;
                 donationModal.classList.remove('hidden');
             }
-
             if (e.target.classList.contains('view-proof-btn')) {
                 const requestId = e.target.dataset.requestid;
-                showModal("Fetching Proof...", "Retrieving report details from the blockchain.", true);
+                showModal("Fetching Proof...", "Retrieving report details...", true);
                 try {
                     const request = await appState.tossContract.fundingRequests(requestId);
                     const report = await appState.tossContract.doctorReports(request.reportId);
                     const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${report.ipfsCID}`;
-                    
                     showModal("Success!", `Report found. Opening in a new tab...`);
                     window.open(ipfsUrl, '_blank');
                 } catch (error) {
@@ -471,15 +519,14 @@
             e.preventDefault();
             const requestId = document.getElementById('donation-request-id').value;
             const amount = document.getElementById('donation-amount').value;
-            const donationModal = document.getElementById('donation-modal');
-            donationModal.classList.add('hidden');
-            showModal("Processing...", "Submitting your donation to the blockchain.", true);
+            document.getElementById('donation-modal').classList.add('hidden');
+            showModal("Processing...", "Submitting your donation...", true);
             try {
                 const amountInWei = ethers.utils.parseEther(amount);
                 const tx = await appState.tossContract.donate(requestId, { value: amountInWei });
                 await tx.wait();
                 showModal("Thank You!", `Your donation was successful!\nTx: ${tx.hash}`);
-                updateDashboardData('donor');
+                updateDashboardData();
             } catch (error) {
                 handleTransactionError(error);
             }
