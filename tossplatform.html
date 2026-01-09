@@ -266,6 +266,18 @@
         async function connectWallet() {
             if (typeof window.ethereum === 'undefined') return showModal("Error", "MetaMask is not installed.");
             try {
+                 try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0xaa36a7' }], // 11155111 in hex
+                    });
+                } catch (switchError) {
+                    if (switchError.code === 4902) {
+                        showModal("Error", "Please add the Sepolia Testnet to your MetaMask settings.");
+                        return;
+                    }
+                    if (switchError.code === 4001) return;
+                }
                 const provider = new ethers.providers.Web3Provider(window.ethereum);
                 await provider.send("eth_requestAccounts", []);
                 const signer = provider.getSigner();
