@@ -1,0 +1,11 @@
+{
+  "name": "toss-orphanage-support",
+  "version": "1.0.0",
+  "description": "Transparent Orphanage Support System",
+  "scripts": {
+    "build": "node generate-env.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
