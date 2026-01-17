@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 interface IVerifiedRegistry {
     function verifiedAdmins(address) external view returns (bool);
     function verifiedDoctors(address) external view returns (bool);
+    function verifiedVendors(address) external view returns (bool);
 }
 
 // NEW Contract: Manages the on-chain record of verified doctor certificates
@@ -45,11 +46,14 @@ contract DoctorCertificateRegistry is Ownable {
 contract VerifiedRegistry is Ownable {
     mapping(address => bool) public verifiedAdmins;
     mapping(address => bool) public verifiedDoctors;
+    mapping(address => bool) public verifiedVendors;
 
     event AdminAdded(address indexed admin);
     event AdminRemoved(address indexed admin);
     event DoctorAdded(address indexed doctor);
     event DoctorRemoved(address indexed doctor);
+    event VendorAdded(address indexed vendor);
+    event VendorRemoved(address indexed vendor);
 
     // Keep track of the certificate registry for potential future checks
     DoctorCertificateRegistry public certificateRegistry;
@@ -87,6 +91,18 @@ contract VerifiedRegistry is Ownable {
         verifiedDoctors[_doctor] = false;
         emit DoctorRemoved(_doctor);
     }
+
+    // --- Vendor Management ---
+    function addVendor(address _vendor) public onlyOwner {
+        require(_vendor != address(0), "VerifiedRegistry: Cannot add the zero address");
+        verifiedVendors[_vendor] = true;
+        emit VendorAdded(_vendor);
+    }
+
+    function removeVendor(address _vendor) public onlyOwner {
+        verifiedVendors[_vendor] = false;
+        emit VendorRemoved(_vendor);
+    }
 }
 
 // Contract 2: The Main Application Logic (Minor change in constructor)
@@ -101,7 +117,7 @@ contract TOSSCore {
         uint256 reportId; uint256 childId; string diagnosis; uint256 estimatedCost; string ipfsCID; address doctorAddress;
     }
      struct FundingRequest {
-        uint256 requestId; uint256 childId; uint256 reportId; uint256 amountNeeded; uint256 amountRaised; string status; address[] donors;
+        uint256 requestId; uint256 childId; uint256 reportId; uint256 amountNeeded; uint256 amountRaised; string status; address[] donors; address vendor;
     }
     uint256 public nextChildId = 101;
     uint256 public nextReportId = 1;
@@ -144,10 +160,11 @@ contract TOSSCore {
         nextReportId++;
     }
 
-     function createFundingRequest(uint256 _childId, uint256 _reportId) public onlyAdmin {
+     function createFundingRequest(uint256 _childId, uint256 _reportId, address _vendor) public onlyAdmin {
         require(childProfiles[_childId].exists, "Child profile does not exist");
         require(doctorReports[_reportId].reportId != 0, "Doctor report does not exist");
         require(doctorReports[_reportId].childId == _childId, "Report does not match child");
+        require(registry.verifiedVendors(_vendor), "Vendor is not verified");
 
         fundingRequests[nextRequestId] = FundingRequest({
             requestId: nextRequestId,
@@ -156,7 +173,8 @@ contract TOSSCore {
             amountNeeded: doctorReports[_reportId].estimatedCost,
             amountRaised: 0,
             status: "FUNDING",
-            donors: new address[](0)
+            donors: new address[](0),
+            vendor: _vendor
         });
         emit FundingRequestCreated(nextRequestId, _childId, doctorReports[_reportId].estimatedCost);
         nextRequestId++;
@@ -171,6 +189,10 @@ contract TOSSCore {
         request.amountRaised += msg.value;
         request.donors.push(msg.sender);
         
+        // Direct Payment to Vendor
+        (bool sent, ) = request.vendor.call{value: msg.value}("");
+        require(sent, "Failed to send Ether to Vendor");
+
         if (request.amountRaised >= request.amountNeeded) {
             request.status = "FUNDED";
         }
