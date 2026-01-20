@@ -361,6 +361,7 @@
             });
 
             function handleTransactionError(error) {
+                console.error("Transaction Error Details:", error);
                 let message = error.message;
                 if (error.data && error.data.message) {
                     message = error.data.message;
@@ -566,13 +567,23 @@
             document.getElementById('add-admin-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const address = document.getElementById('new-admin-address').value;
-                showModal("Processing...", "Adding new Admin...", true);
+                console.log("Attempting to add admin:", address);
+
+                showModal("Processing...", "Adding new Admin... Check your wallet to sign.", true);
                 try {
+                    console.log("Registry Contract Address:", appState.registryContract.address);
+                    console.log("Sending addAdmin transaction...");
                     const tx = await appState.registryContract.addAdmin(address);
+                    console.log("Transaction submitted. Hash:", tx.hash);
+
+                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+
                     await tx.wait();
+                    console.log("Transaction confirmed.");
                     showModal("Success!", `Address ${address} is now an Admin.`);
                     document.getElementById('new-admin-address').value = '';
                 } catch (error) {
+                    console.error("Error in Add Admin:", error);
                     handleTransactionError(error);
                 }
             });
@@ -580,26 +591,40 @@
             document.getElementById('add-doctor-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const address = document.getElementById('new-doctor-address').value;
-                showModal("Processing...", "Adding new Doctor...", true);
+                console.log("[Add Doctor] Starting for address:", address);
+                showModal("Processing...", "Adding new Doctor... Check wallet to sign.", true);
                 try {
+                    console.log("[Add Doctor] Sending transaction...");
                     const tx = await appState.registryContract.addDoctor(address);
+                    console.log("[Add Doctor] Tx Hash:", tx.hash);
+                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+
                     await tx.wait();
+                    console.log("[Add Doctor] Confirmed!");
                     showModal("Success!", `Address ${address} is now a Doctor.`);
                     document.getElementById('new-doctor-address').value = '';
                 } catch (error) {
+                    console.error("[Add Doctor] Error:", error);
                     handleTransactionError(error);
                 }
             });
             document.getElementById('add-vendor-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const address = document.getElementById('new-vendor-address').value;
-                showModal("Processing...", "Adding new Vendor...", true);
+                console.log("[Add Vendor] Starting for address:", address);
+                showModal("Processing...", "Adding new Vendor... Check wallet to sign.", true);
                 try {
+                    console.log("[Add Vendor] Sending transaction...");
                     const tx = await appState.registryContract.addVendor(address);
+                    console.log("[Add Vendor] Tx Hash:", tx.hash);
+                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+
                     await tx.wait();
+                    console.log("[Add Vendor] Confirmed!");
                     showModal("Success!", `Address ${address} is now a Vendor.`);
                     document.getElementById('new-vendor-address').value = '';
                 } catch (error) {
+                    console.error("[Add Vendor] Error:", error);
                     handleTransactionError(error);
                 }
             });
