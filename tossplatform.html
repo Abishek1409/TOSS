@@ -376,10 +376,15 @@
 
             function showModal(title, message, isLoading = false) {
                 modalTitle.textContent = title;
-                modalMessageContent.innerHTML = `<p class="text-sm text-gray-500">${message.replace(/\n/g, '<br>')}</p>`;
+                modalMessageContent.innerHTML = `<p class="text-sm text-gray-500 text-wrap break-all">${message.replace(/\n/g, '<br>')}</p>`;
                 modalLoader.style.display = isLoading ? 'block' : 'none';
                 modalClose.style.display = isLoading ? 'none' : 'block';
                 modal.classList.remove('hidden');
+
+                // Allow manually showing close button even if loading (for long waits)
+                if (isLoading && message.includes("You can close this")) {
+                    modalClose.style.display = 'block';
+                }
             }
             modalClose.addEventListener('click', () => modal.classList.add('hidden'));
 
@@ -576,7 +581,8 @@
                     const tx = await appState.registryContract.addAdmin(address);
                     console.log("Transaction submitted. Hash:", tx.hash);
 
-                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Transaction submitted to the network.<br>Tx Hash: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...<br><span class="text-xs text-gray-500">If this takes too long, you can close this and check Etherscan.</span>`, true);
 
                     await tx.wait();
                     console.log("Transaction confirmed.");
@@ -597,7 +603,9 @@
                     console.log("[Add Doctor] Sending transaction...");
                     const tx = await appState.registryContract.addDoctor(address);
                     console.log("[Add Doctor] Tx Hash:", tx.hash);
-                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Transaction submitted.<br>Tx: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...<br><span class="text-xs text-gray-500">You can close this window.</span>`, true);
 
                     await tx.wait();
                     console.log("[Add Doctor] Confirmed!");
@@ -617,7 +625,9 @@
                     console.log("[Add Vendor] Sending transaction...");
                     const tx = await appState.registryContract.addVendor(address);
                     console.log("[Add Vendor] Tx Hash:", tx.hash);
-                    showModal("Processing...", `Transaction sent! Waiting for confirmation...\nTx: ${tx.hash}`, true);
+
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Transaction submitted.<br>Tx: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...<br><span class="text-xs text-gray-500">You can close this window.</span>`, true);
 
                     await tx.wait();
                     console.log("[Add Vendor] Confirmed!");
