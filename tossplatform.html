@@ -146,20 +146,6 @@
                 <h2 class="text-3xl font-semibold mb-6 flex items-center">Owner Dashboard <span class="role-badge">SUPER
                         ADMIN</span></h2>
                 <div class="grid lg:grid-cols-2 gap-8">
-                    <!-- Verify Certificate (New) -->
-                    <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-blue-500">
-                        <h3 class="text-xl font-semibold mb-4">Verify Doctor Certificate</h3>
-                        <p class="text-sm text-gray-500 mb-4">Register off-chain verification hashes before adding
-                            doctors.</p>
-                        <form id="verify-certificate-form">
-                            <input type="text" id="cert-doctor-address" placeholder="Doctor Wallet Address (0x...)"
-                                class="mt-1 block w-full input mb-2" required>
-                            <input type="text" id="cert-hash" placeholder="Certificate Hash (bytes32)"
-                                class="mt-1 block w-full input mb-2" required>
-                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Register
-                                Certificate</button>
-                        </form>
-                    </div>
                     <!-- Add Admin -->
                     <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-purple-500">
                         <h3 class="text-xl font-semibold mb-4">Add New Admin</h3>
@@ -314,10 +300,10 @@
                 pinataSecretApiKey: pinataSecretApiKey,
                 contractAbi: JSON.parse(`[{"inputs":[{"internalType":"address","name":"_registryAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"name","type":"string"}],"name":"ChildProfileCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"reportId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"string","name":"ipfsCID","type":"string"}],"name":"DoctorReportCreated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"address","name":"donor","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"DonationMade","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"requestId","type":"uint256"},{"indexed":true,"internalType":"uint256","name":"childId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountNeeded","type":"uint256"}],"name":"FundingRequestCreated","type":"event"},{"inputs":[{"internalType":"string","name":"_name","type":"string"},{"internalType":"uint256","name":"_age","type":"uint256"},{"internalType":"string","name":"_story","type":"string"}],"name":"createChildProfile","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"string","name":"_diagnosis","type":"string"},{"internalType":"uint256","name":"_estimatedCost","type":"uint256"},{"internalType":"string","name":"_ipfsCID","type":"string"}],"name":"createDoctorReport","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_childId","type":"uint256"},{"internalType":"uint256","name":"_reportId","type":"uint256"},{"internalType":"address","name":"_vendor","type":"address"}],"name":"createFundingRequest","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_requestId","type":"uint256"}],"name":"donate","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"childProfiles","outputs":[{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"name","type":"string"},{"internalType":"uint256","name":"age","type":"uint256"},{"internalType":"string","name":"story","type":"string"},{"internalType":"bool","name":"isVerified","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"doctorReports","outputs":[{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"string","name":"diagnosis","type":"string"},{"internalType":"uint256","name":"estimatedCost","type":"uint256"},{"internalType":"string","name":"ipfsCID","type":"string"},{"internalType":"address","name":"doctorAddress","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"fundingRequests","outputs":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"},{"internalType":"address","name":"vendor","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getAllFundingRequests","outputs":[{"components":[{"internalType":"uint256","name":"requestId","type":"uint256"},{"internalType":"uint256","name":"childId","type":"uint256"},{"internalType":"uint256","name":"reportId","type":"uint256"},{"internalType":"uint256","name":"amountNeeded","type":"uint256"},{"internalType":"uint256","name":"amountRaised","type":"uint256"},{"internalType":"string","name":"status","type":"string"},{"internalType":"address[]","name":"donors","type":"address[]"},{"internalType":"address","name":"vendor","type":"address"}],"internalType":"struct TOSSCore.FundingRequest[]","name":"","type":"tuple[]"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextChildId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextReportId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"nextRequestId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"registry","outputs":[{"internalType":"contract IVerifiedRegistry","name":"","type":"address"}],"stateMutability":"view","type":"function"}]`),
                 registryAbi: JSON.parse(`[{"inputs":[{"internalType":"address","name":"_certificateRegistryAddress","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"admin","type":"address"}],"name":"AdminRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctor","type":"address"}],"name":"DoctorRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"vendor","type":"address"}],"name":"VendorAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"vendor","type":"address"}],"name":"VendorRemoved","type":"event"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"addAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"addDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_vendor","type":"address"}],"name":"addVendor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"certificateRegistry","outputs":[{"internalType":"contract DoctorCertificateRegistry","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_admin","type":"address"}],"name":"removeAdmin","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctor","type":"address"}],"name":"removeDoctor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_vendor","type":"address"}],"name":"removeVendor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedAdmins","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedDoctors","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"verifiedVendors","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"}]`),
-                certificateRegistryAbi: JSON.parse(`[{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"doctorAddress","type":"address"},{"indexed":false,"internalType":"bytes32","name":"certificateHash","type":"bytes32"}],"name":"CertificateVerified","type":"event"},{"inputs":[{"internalType":"address","name":"_doctorAddress","type":"address"},{"internalType":"bytes32","name":"_certificateHash","type":"bytes32"}],"name":"addVerifiedCertificate","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_doctorAddress","type":"address"}],"name":"getCertificateHash","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}]`)
+
             };
 
-            let appState = { provider: null, signer: null, userAddress: null, tossContract: null, registryContract: null, certificateRegistryContract: null };
+            let appState = { provider: null, signer: null, userAddress: null, tossContract: null, registryContract: null };
             const connectWalletBtn = document.getElementById('connect-wallet-btn');
             const logoutBtn = document.getElementById('logout-btn');
             const userSession = document.getElementById('user-session');
@@ -433,12 +419,7 @@
                     const registryAddress = await appState.tossContract.registry();
                     appState.registryContract = new ethers.Contract(registryAddress, config.registryAbi, signer);
 
-                    try {
-                        const certificateRegistryAddress = await appState.registryContract.certificateRegistry();
-                        appState.certificateRegistryContract = new ethers.Contract(certificateRegistryAddress, config.certificateRegistryAbi, signer);
-                    } catch (e) {
-                        console.warn("Could not load CertificateRegistry", e);
-                    }
+
 
                     updateUI(true, userAddress);
                     determineRoleAndRenderDashboard();
@@ -639,23 +620,7 @@
                 }
             });
 
-            document.getElementById('verify-certificate-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const address = document.getElementById('cert-doctor-address').value;
-                const hash = document.getElementById('cert-hash').value;
-                if (!appState.certificateRegistryContract) return showModal("Error", "Certificate Registry not connected.");
 
-                showModal("Processing...", "Registering Certificate Hash...", true);
-                try {
-                    const tx = await appState.certificateRegistryContract.addVerifiedCertificate(address, hash);
-                    await tx.wait();
-                    showModal("Success!", `Certificate verified for ${address}.`);
-                    document.getElementById('cert-doctor-address').value = '';
-                    document.getElementById('cert-hash').value = '';
-                } catch (error) {
-                    handleTransactionError(error);
-                }
-            });
             // -------------------
 
             document.getElementById('add-child-form').addEventListener('submit', async (e) => {
