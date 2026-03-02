@@ -146,9 +146,9 @@
                 <h2 class="text-3xl font-semibold mb-6 flex items-center">Owner Dashboard <span class="role-badge">SUPER
                         ADMIN</span></h2>
                 <div class="grid lg:grid-cols-2 gap-8">
-                    <!-- Add Admin -->
+                    <!-- Manage Admin -->
                     <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-purple-500">
-                        <h3 class="text-xl font-semibold mb-4">Add New Admin</h3>
+                        <h3 class="text-xl font-semibold mb-4">Manage Admin Role</h3>
                         <p class="text-sm text-gray-500 mb-4">Authorize an NGO staff member to create child profiles.
                         </p>
                         <form id="add-admin-form">
@@ -157,10 +157,21 @@
                             <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant Admin
                                 Role</button>
                         </form>
+                        <div class="border-t border-gray-200 mt-5 pt-5">
+                            <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-3">⚠ Revoke Access
+                            </p>
+                            <form id="remove-admin-form">
+                                <input type="text" id="remove-admin-address" placeholder="Admin Wallet Address (0x...)"
+                                    class="mt-1 block w-full input mb-2" required>
+                                <button type="submit"
+                                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md">Revoke
+                                    Admin Role</button>
+                            </form>
+                        </div>
                     </div>
-                    <!-- Add Doctor -->
+                    <!-- Manage Doctor -->
                     <div class="bg-white p-6 rounded-lg shadow-sm dashboard-card border-l-4 border-green-500">
-                        <h3 class="text-xl font-semibold mb-4">Add New Doctor</h3>
+                        <h3 class="text-xl font-semibold mb-4">Manage Doctor Role</h3>
                         <p class="text-sm text-gray-500 mb-4">Authorize a medical professional to upload reports.</p>
                         <form id="add-doctor-form">
                             <input type="text" id="new-doctor-address" placeholder="Doctor Wallet Address (0x...)"
@@ -168,19 +179,45 @@
                             <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant Doctor
                                 Role</button>
                         </form>
+                        <div class="border-t border-gray-200 mt-5 pt-5">
+                            <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-3">⚠ Revoke Access
+                            </p>
+                            <form id="remove-doctor-form">
+                                <input type="text" id="remove-doctor-address"
+                                    placeholder="Doctor Wallet Address (0x...)" class="mt-1 block w-full input mb-2"
+                                    required>
+                                <button type="submit"
+                                    class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md">Revoke
+                                    Doctor Role</button>
+                            </form>
+                        </div>
                     </div>
-                    <!-- Add Vendor -->
+                    <!-- Manage Vendor -->
                     <div
                         class="bg-white p-6 rounded-lg col-span-full shadow-sm dashboard-card border-l-4 border-yellow-500">
-                        <h3 class="text-xl font-semibold mb-4">Add New Vendor</h3>
+                        <h3 class="text-xl font-semibold mb-4">Manage Vendor Role</h3>
                         <p class="text-sm text-gray-500 mb-4">Verify a Hospital/Pharmacy (Vendor) to receive direct
                             payments. This skips the NGO wallet.</p>
-                        <form id="add-vendor-form">
-                            <input type="text" id="new-vendor-address" placeholder="Vendor Wallet Address (0x...)"
-                                class="mt-1 block w-full input mb-2" required>
-                            <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant Vendor
-                                Role</button>
-                        </form>
+                        <div class="grid lg:grid-cols-2 gap-6">
+                            <form id="add-vendor-form">
+                                <input type="text" id="new-vendor-address" placeholder="Vendor Wallet Address (0x...)"
+                                    class="mt-1 block w-full input mb-2" required>
+                                <button type="submit" class="w-full btn-primary font-bold py-2 px-4 rounded-md">Grant
+                                    Vendor Role</button>
+                            </form>
+                            <div>
+                                <p class="text-xs font-semibold text-red-600 uppercase tracking-wide mb-3">⚠ Revoke
+                                    Access</p>
+                                <form id="remove-vendor-form">
+                                    <input type="text" id="remove-vendor-address"
+                                        placeholder="Vendor Wallet Address (0x...)" class="mt-1 block w-full input mb-2"
+                                        required>
+                                    <button type="submit"
+                                        class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-md">Revoke
+                                        Vendor Role</button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -620,6 +657,57 @@
                 }
             });
 
+
+            document.getElementById('remove-admin-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const address = document.getElementById('remove-admin-address').value;
+                showModal("Processing...", "Revoking Admin role... Check your wallet to sign.", true);
+                try {
+                    const tx = await appState.registryContract.removeAdmin(address);
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Revoke Admin submitted.<br>Tx: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...`, true);
+                    await tx.wait();
+                    showModal("Success!", `Admin role has been revoked for ${address}.`);
+                    document.getElementById('remove-admin-address').value = '';
+                } catch (error) {
+                    console.error("[Remove Admin] Error:", error);
+                    handleTransactionError(error);
+                }
+            });
+
+            document.getElementById('remove-doctor-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const address = document.getElementById('remove-doctor-address').value;
+                showModal("Processing...", "Revoking Doctor role... Check your wallet to sign.", true);
+                try {
+                    const tx = await appState.registryContract.removeDoctor(address);
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Revoke Doctor submitted.<br>Tx: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...`, true);
+                    await tx.wait();
+                    showModal("Success!", `Doctor role has been revoked for ${address}.`);
+                    document.getElementById('remove-doctor-address').value = '';
+                } catch (error) {
+                    console.error("[Remove Doctor] Error:", error);
+                    handleTransactionError(error);
+                }
+            });
+
+            document.getElementById('remove-vendor-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const address = document.getElementById('remove-vendor-address').value;
+                showModal("Processing...", "Revoking Vendor role... Check your wallet to sign.", true);
+                try {
+                    const tx = await appState.registryContract.removeVendor(address);
+                    const explorerUrl = `https://sepolia.etherscan.io/tx/${tx.hash}`;
+                    showModal("Transaction Sent", `Revoke Vendor submitted.<br>Tx: <a href="${explorerUrl}" target="_blank" class="text-blue-600 underline">${tx.hash.substring(0, 20)}...</a><br><br>Waiting for confirmation...`, true);
+                    await tx.wait();
+                    showModal("Success!", `Vendor role has been revoked for ${address}.`);
+                    document.getElementById('remove-vendor-address').value = '';
+                } catch (error) {
+                    console.error("[Remove Vendor] Error:", error);
+                    handleTransactionError(error);
+                }
+            });
 
             // -------------------
 
